@@ -210,3 +210,14 @@ const init = () => {
 };
 
 init();
+// Goth OS (https://kylegothman.github.io/goth-os/) embeds this page in a window and forwards
+// its master volume slider as a window message: { type: 'goth-os:volume', volume: 0..1 }.
+// Tone's destination volume is in decibels, so 0..1 maps via 20·log10(v); 0 mutes.
+window.addEventListener("message", (event) => {
+  const trustedOrigin = /^https:\/\/kylegothman\.github\.io$|^http:\/\/localhost(:\d+)?$/;
+  if (!trustedOrigin.test(event.origin) || event.data?.type !== "goth-os:volume") return;
+
+  const level = Math.min(1, Math.max(0, Number(event.data.volume)));
+  const destination = typeof Tone.getDestination === "function" ? Tone.getDestination() : Tone.Destination;
+  destination.volume.value = level === 0 ? -Infinity : 20 * Math.log10(level);
+});
